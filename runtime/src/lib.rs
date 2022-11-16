@@ -6,6 +6,10 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+// use codec::{Encode, Decode};
+// use frame_support::RuntimeDebug;
+#[cfg(feature = "std")]
+use serde::{Serialize, Deserialize};
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
@@ -24,6 +28,9 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
+
+// use orml_currencies::BasicCurrencyAdapter;
+// use orml_traits::parameter_type_with_key;
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
@@ -47,7 +54,10 @@ pub use sp_runtime::{Perbill, Permill};
 
 /// Import the template pallet.
 pub use pallet_template;
-
+pub use pallet_something;
+pub use pallet_mint_token;
+pub use pallet_lockable_currency;
+pub use pallet_exchange;
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -138,6 +148,8 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 2400;
 	pub const Version: RuntimeVersion = VERSION;
+	pub const MaxAddend: u32 = 20;
+	pub const ClearFrequency: u32 = 10;
 	/// We allow for 2 seconds of compute with a 6 second average block time.
 	pub BlockWeights: frame_system::limits::BlockWeights =
 		frame_system::limits::BlockWeights::with_sensible_defaults(
@@ -278,6 +290,55 @@ impl pallet_template::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 }
 
+impl pallet_something::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type MaxAddend = MaxAddend;
+	type ClearFrequency = ClearFrequency;
+}
+
+impl pallet_mint_token::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+}
+
+impl pallet_lockable_currency::Config for Runtime{
+	type RuntimeEvent = RuntimeEvent;
+	type StakeCurrency = Balances;
+}
+
+impl pallet_exchange::Config for Runtime{
+	type RuntimeEvent = RuntimeEvent;
+}
+
+// pub type Amount = i128;
+// #[derive(Encode, Decode, PartialEq, Eq, Clone, Copy, RuntimeDebug, PartialOrd, Ord)]
+// #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+// pub enum CurrencyId {
+// 	Native,
+// 	DOT,
+// 	KSM,
+// 	BTC
+// }
+
+// impl orml_tokens::Config for Runtime {
+// 	type Event = Event;
+// 	type Balance = Balance;
+// 	type Amount = Amount;
+// 	type CurrencyId = CurrencyId;
+// 	type WeightInfo = ();
+// 	type ExistentialDeposits = ExistentialDeposits;
+// 	type OnDust = ();
+// }
+
+// parameter_types! {
+// 	pub const GetNativeCurrencyId: CurrencyId = CurrencyId::Native;
+// }
+// impl orml_currencies::Config for Runtime {
+// 	type Event = Event;
+// 	type MultiCurrency = Tokens;
+// 	type NativeCurrency = BasicCurrencyAdapter<Runtime, Balances, Amount, BlockNumber>;
+// 	type GetNativeCurrencyId = GetNativeCurrencyId;
+// 	type WeightInfo = ();
+// }
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime
@@ -296,6 +357,12 @@ construct_runtime!(
 		Sudo: pallet_sudo,
 		// Include the custom logic from the pallet-template in the runtime.
 		TemplateModule: pallet_template,
+		Something: pallet_something,
+		MintToken: pallet_mint_token,
+		LockableCurrency: pallet_lockable_currency,
+		// Currencies: orml_currencies::{Module, Call, Event<T>},
+		// Tokens: orml_tokens::{Module, Storage, Event<T>, Config<T>},
+		Exchange: pallet_exchange
 	}
 );
 
