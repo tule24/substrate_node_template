@@ -6,10 +6,6 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-// use codec::{Encode, Decode};
-// use frame_support::RuntimeDebug;
-#[cfg(feature = "std")]
-use serde::{Serialize, Deserialize};
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
@@ -28,9 +24,6 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
-
-// use orml_currencies::BasicCurrencyAdapter;
-// use orml_traits::parameter_type_with_key;
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
@@ -52,12 +45,13 @@ use pallet_transaction_payment::{ConstFeeMultiplier, CurrencyAdapter, Multiplier
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
+pub use pallet_kitties;
+pub use pallet_kitties_v2;
+pub use pallet_lockable_currency;
+pub use pallet_mint_token;
+pub use pallet_something;
 /// Import the template pallet.
 pub use pallet_template;
-pub use pallet_something;
-pub use pallet_mint_token;
-pub use pallet_lockable_currency;
-pub use pallet_exchange;
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -150,6 +144,7 @@ parameter_types! {
 	pub const Version: RuntimeVersion = VERSION;
 	pub const MaxAddend: u32 = 20;
 	pub const ClearFrequency: u32 = 10;
+	pub const MaxKittyOwned: u32 = 9999;
 	/// We allow for 2 seconds of compute with a 6 second average block time.
 	pub BlockWeights: frame_system::limits::BlockWeights =
 		frame_system::limits::BlockWeights::with_sensible_defaults(
@@ -267,6 +262,31 @@ impl pallet_balances::Config for Runtime {
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
 
+impl pallet_nicks::Config for Runtime {
+	// The Balances pallet implements the ReservableCurrency trait.
+	// `Balances` is defined in `construct_runtime!` macro.
+	type Currency = Balances;
+
+	// Set ReservationFee to a value.
+	type ReservationFee = ConstU128<100>;
+
+	// No action is taken when deposits are forfeited.
+	type Slashed = ();
+
+	// Configure the FRAME System Root origin as the Nick pallet admin.
+	// https://paritytech.github.io/substrate/master/frame_system/enum.RawOrigin.html#variant.Root
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+
+	// Set MinLength of nick name to a desired value.
+	type MinLength = ConstU32<8>;
+
+	// Set MaxLength of nick name to a desired value.
+	type MaxLength = ConstU32<32>;
+
+	// The ubiquitous event type.
+	type RuntimeEvent = RuntimeEvent;
+}
+
 parameter_types! {
 	pub FeeMultiplier: Multiplier = Multiplier::one();
 }
@@ -300,47 +320,26 @@ impl pallet_mint_token::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 }
 
-impl pallet_lockable_currency::Config for Runtime{
+impl pallet_lockable_currency::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type StakeCurrency = Balances;
 }
 
-impl pallet_exchange::Config for Runtime{
+impl pallet_kitties::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
+	type Currency = Balances;
+	type KittyRandomness = RandomnessCollectiveFlip;
+	type MaxKittyOwned = MaxKittyOwned;
 }
 
-// pub type Amount = i128;
-// #[derive(Encode, Decode, PartialEq, Eq, Clone, Copy, RuntimeDebug, PartialOrd, Ord)]
-// #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-// pub enum CurrencyId {
-// 	Native,
-// 	DOT,
-// 	KSM,
-// 	BTC
-// }
-
-// impl orml_tokens::Config for Runtime {
-// 	type Event = Event;
-// 	type Balance = Balance;
-// 	type Amount = Amount;
-// 	type CurrencyId = CurrencyId;
-// 	type WeightInfo = ();
-// 	type ExistentialDeposits = ExistentialDeposits;
-// 	type OnDust = ();
-// }
-
-// parameter_types! {
-// 	pub const GetNativeCurrencyId: CurrencyId = CurrencyId::Native;
-// }
-// impl orml_currencies::Config for Runtime {
-// 	type Event = Event;
-// 	type MultiCurrency = Tokens;
-// 	type NativeCurrency = BasicCurrencyAdapter<Runtime, Balances, Amount, BlockNumber>;
-// 	type GetNativeCurrencyId = GetNativeCurrencyId;
-// 	type WeightInfo = ();
-// }
+impl pallet_kitties_v2::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Currency = Balances;
+	type KittyRandomness = RandomnessCollectiveFlip;
+	type MaxKittiesOwned = MaxKittyOwned;
+}
 // Create the runtime by composing the FRAME pallets that were previously configured.
-construct_runtime!(
+construct_runtime!( // tạo ra một runtime từ danh sách các pallet mà mình impl
 	pub struct Runtime
 	where
 		Block = Block,
@@ -360,9 +359,9 @@ construct_runtime!(
 		Something: pallet_something,
 		MintToken: pallet_mint_token,
 		LockableCurrency: pallet_lockable_currency,
-		// Currencies: orml_currencies::{Module, Call, Event<T>},
-		// Tokens: orml_tokens::{Module, Storage, Event<T>, Config<T>},
-		Exchange: pallet_exchange
+		Kitties: pallet_kitties,
+		KittiesV2: pallet_kitties_v2,
+		Nicks: pallet_nicks,
 	}
 );
 
@@ -413,8 +412,8 @@ mod benches {
 	);
 }
 
-impl_runtime_apis! {
-	impl sp_api::Core<Block> for Runtime {
+impl_runtime_apis! { // impl các interface runtime API
+	impl sp_api::Core<Block> for Runtime { // core
 		fn version() -> RuntimeVersion {
 			VERSION
 		}
@@ -428,13 +427,13 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl sp_api::Metadata<Block> for Runtime {
+	impl sp_api::Metadata<Block> for Runtime { // metadata
 		fn metadata() -> OpaqueMetadata {
 			OpaqueMetadata::new(Runtime::metadata().into())
 		}
 	}
 
-	impl sp_block_builder::BlockBuilder<Block> for Runtime {
+	impl sp_block_builder::BlockBuilder<Block> for Runtime { // các func cần thiết để build block
 		fn apply_extrinsic(extrinsic: <Block as BlockT>::Extrinsic) -> ApplyExtrinsicResult {
 			Executive::apply_extrinsic(extrinsic)
 		}
@@ -455,7 +454,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
+	impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime { // validate các transaction
 		fn validate_transaction(
 			source: TransactionSource,
 			tx: <Block as BlockT>::Extrinsic,
@@ -465,13 +464,13 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl sp_offchain::OffchainWorkerApi<Block> for Runtime {
+	impl sp_offchain::OffchainWorkerApi<Block> for Runtime { // cho phép các hoạt động offchain
 		fn offchain_worker(header: &<Block as BlockT>::Header) {
 			Executive::offchain_worker(header)
 		}
 	}
 
-	impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
+	impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime { // aura consensus => authorize block (aura, babe => authorize, grandpa: finalize)
 		fn slot_duration() -> sp_consensus_aura::SlotDuration {
 			sp_consensus_aura::SlotDuration::from_millis(Aura::slot_duration())
 		}
@@ -481,7 +480,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl sp_session::SessionKeys<Block> for Runtime {
+	impl sp_session::SessionKeys<Block> for Runtime { // create and decode session key
 		fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
 			opaque::SessionKeys::generate(seed)
 		}
@@ -493,7 +492,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl fg_primitives::GrandpaApi<Block> for Runtime {
+	impl fg_primitives::GrandpaApi<Block> for Runtime { // grandpa consensus: finalize block
 		fn grandpa_authorities() -> GrandpaAuthorityList {
 			Grandpa::grandpa_authorities()
 		}
@@ -523,13 +522,13 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
+	impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime { // truy vấn transaction indices
 		fn account_nonce(account: AccountId) -> Index {
 			System::account_nonce(account)
 		}
 	}
 
-	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance> for Runtime {
+	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance> for Runtime { // truy vấn thông tin transaction
 		fn query_info(
 			uxt: <Block as BlockT>::Extrinsic,
 			len: u32,
@@ -562,7 +561,7 @@ impl_runtime_apis! {
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]
-	impl frame_benchmarking::Benchmark<Block> for Runtime {
+	impl frame_benchmarking::Benchmark<Block> for Runtime { // ước tính và đo lường time vận hành cần thiết để hoàn tất giao dịch
 		fn benchmark_metadata(extra: bool) -> (
 			Vec<frame_benchmarking::BenchmarkList>,
 			Vec<frame_support::traits::StorageInfo>,

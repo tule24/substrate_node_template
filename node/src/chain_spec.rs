@@ -1,14 +1,12 @@
 use node_template_runtime::{
-	AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, Signature, SudoConfig,
-	SystemConfig, WASM_BINARY, 
-	// TokensConfig, CurrencyId,
+	AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, Signature, SudoConfig, KittiesConfig, KittiesV2Config,
+	SystemConfig, WASM_BINARY
 };
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use serde_json::map::Map;
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
@@ -38,9 +36,6 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
 }
 
 pub fn development_config() -> Result<ChainSpec, String> {
-	// let mut properties = Map::new();
-	// properties.insert("tokenSymbol".into(), "TEST".into());
-	// properties.insert("tokenDecimals".into(), 15.into());
 
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 
@@ -157,16 +152,11 @@ fn testnet_genesis(
 			key: Some(root_key),
 		},
 		transaction_payment: Default::default(),
-		// orml_tokens: Some(TokensConfig {
-		// 	endowed_accounts: endowed_accounts
-		// 	.iter()
-		// 	.flat_map(|x| {
-		// 		vec![
-		// 			(x.clone(), CurrencyId::DOT, 10u128.pow(16)),
-		// 			(x.clone(), CurrencyId::BTC, 10u128.pow(16)),
-		// 		]
-		// 	})
-		// 	.collect(),
-		// }),
+		kitties: KittiesConfig {
+			kitties: vec![],
+		},
+		kitties_v2: KittiesV2Config{
+			kitties_v2: vec![],
+		}
 	}
 }

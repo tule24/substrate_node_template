@@ -36,7 +36,7 @@ pub mod pallet {
 	#[pallet::getter(fn something)]
 	// Learn more about declaring storage items:
 	// https://docs.substrate.io/main-docs/build/runtime-storage/#declaring-storage-items
-	pub type Something<T> = StorageValue<_, u32>;
+	pub type Something<T> = StorageValue<_, u32, ResultQuery<Error::<T>::StorageOverflow>>;
 
 	#[pallet::storage]
 	pub type Number<T:Config> = StorageMap<_, Blake2_128Concat, T::AccountId, u32, ValueQuery, >;
@@ -49,7 +49,8 @@ pub mod pallet {
 		/// Event documentation should end with an array that provides descriptive names for event
 		/// parameters. [something, who]
 		SomethingStored(u32, T::AccountId),
-		SomethingDeleted(T::AccountId)
+		SomethingDeleted(T::AccountId),
+		Value(u32)
 	}
 
 	// Errors inform users that something went wrong.
@@ -70,13 +71,19 @@ pub mod pallet {
 		/// storage and emits an event. This function must be dispatched by a signed extrinsic.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		pub fn do_something(origin: OriginFor<T>, something: u32) -> DispatchResult {
+			// OriginFor là 1 alias type của RuntimeOrigin
+			// Mà RuntimeOrigin là 1 type trong Config được sử dụng để dispatch call
+
 			// Check that the extrinsic was signed and get the signer.
 			// This function will return an error if the extrinsic is not signed.
+			// Nếu sign rồi thì trả về accountId của người call
 			// https://docs.substrate.io/main-docs/build/origins/
-			let who = ensure_signed(origin)?;
+			let who = ensure_signed(origin)?; 
 
 			// Update storage.
 			<Something<T>>::put(something);
+			// Something::<T>::put(something);
+			// Something::<T>::get() == <Something<T>>::get() == Self::something();
 
 			// Emit an event.
 			Self::deposit_event(Event::SomethingStored(something, who));
@@ -89,6 +96,14 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 			<Number<T>>::insert(who.clone(), number);
 			Self::deposit_event(Event::SomethingStored(number, who));
+			Ok(())
+		}
+
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		pub fn get_number(origin: OriginFor<T>) -> DispatchResult{
+			let who = ensure_signed(origin)?;
+			let num = <Number<T>>::get(who.clone());
+			Self::deposit_event(Event::Value(num));
 			Ok(())
 		}
 
@@ -106,17 +121,21 @@ pub mod pallet {
 			let _who = ensure_signed(origin)?;
 
 			// Read a value from storage.
-			match <Something<T>>::get() {
-				// Return an error if the value has not been set.
-				None => return Err(Error::<T>::NoneValue.into()),
-				Some(old) => {
-					// Increment the value read from storage; will error in the event of overflow.
-					let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
-					// Update the value in storage with the incremented result.
-					<Something<T>>::put(new);
-					Ok(())
-				},
-			}
+			// match <Something<T>>::get() {
+			// 	// Return an error if the value has not been set.
+			// 	None => return Err(Error::<T>::NoneValue.into()),
+			// 	Some(old) => {
+			// 		// Increment the value read from storage; will error in the event of overflow.
+			// 		let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
+			// 		// Update the value in storage with the incremented result.
+			// 		<Something<T>>::put(new);
+			// 		Ok(())
+			// 	},
+			// }
+			let x = <Something<T>>::get()?;
+			// let x = x.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
+			<Something<T>>::put(x);
+			Ok(())
 		}
 	}
 }
