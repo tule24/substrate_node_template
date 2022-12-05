@@ -29,7 +29,7 @@ use sp_version::RuntimeVersion;
 pub use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{
-		ConstU128, ConstU32, ConstU64, ConstU8, KeyOwnerProofSystem, Randomness, StorageInfo,
+		ConstU128, ConstU32, ConstU64, ConstU8, KeyOwnerProofSystem, Randomness, StorageInfo, Time
 	},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -47,6 +47,9 @@ pub use sp_runtime::{Perbill, Permill};
 
 pub use pallet_kitties;
 pub use pallet_kitties_v2;
+pub use pallet_kitties_myself;
+pub use pallet_tight_coupling;
+pub use pallet_loose_coupling;
 pub use pallet_lockable_currency;
 pub use pallet_mint_token;
 pub use pallet_something;
@@ -338,6 +341,22 @@ impl pallet_kitties_v2::Config for Runtime {
 	type KittyRandomness = RandomnessCollectiveFlip;
 	type MaxKittiesOwned = MaxKittyOwned;
 }
+
+impl pallet_kitties_myself::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Time = Timestamp;
+	type MaxKittiesOwned = MaxKittyOwned;
+	type KittyDnaRandom = RandomnessCollectiveFlip;
+}
+
+impl pallet_tight_coupling::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+}
+
+impl pallet_loose_coupling::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type IncreaseValue = TemplateModule;
+}
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!( // tạo ra một runtime từ danh sách các pallet mà mình impl
 	pub struct Runtime
@@ -361,6 +380,9 @@ construct_runtime!( // tạo ra một runtime từ danh sách các pallet mà m�
 		LockableCurrency: pallet_lockable_currency,
 		Kitties: pallet_kitties,
 		KittiesV2: pallet_kitties_v2,
+		KittiesMyself: pallet_kitties_myself,
+		TightCoupling: pallet_tight_coupling,
+		LooseCoupling: pallet_loose_coupling,
 		Nicks: pallet_nicks,
 	}
 );

@@ -56,6 +56,9 @@ pallet-mint-token = { version = "0.1.0", default-features = false, path="../pall
 pallet-lockable-currency = { version = "0.1.0", default-features = false, path="../pallets/lockable-currency"}
 pallet-kitties = { version = "0.1.0", default-features = false, path="../pallets/kitties"}
 pallet-kitties-v2 = { version = "0.1.0", default-features = false, path="../pallets/kitties_v2"}
+pallet-kitties-myself = { version = "0.1.0", default-features = false, path="../pallets/kitties_myself"}
+pallet-tight-coupling = { version = "0.1.0", default-features = false, path="../pallets/tight_coupling"}
+pallet-loose-coupling = { version = "0.1.0", default-features = false, path="../pallets/loose_coupling"}
 
 
 [build-dependencies]
@@ -86,6 +89,9 @@ std = [
 	"pallet-lockable-currency/std",
 	"pallet-kitties/std",
 	"pallet-kitties-v2/std",
+	"pallet-kitties-myself/std",
+	"pallet-tight-coupling/std",
+	"pallet-loose-coupling/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
@@ -115,6 +121,9 @@ runtime-benchmarks = [
 	"pallet-lockable-currency/runtime-benchmarks",
 	"pallet-kitties/runtime-benchmarks",
 	"pallet-kitties-v2/runtime-benchmarks",
+	"pallet-kitties-myself/runtime-benchmarks",
+	"pallet-tight-coupling/runtime-benchmarks",
+	"pallet-loose-coupling/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 ]
@@ -134,6 +143,9 @@ try-runtime = [
 	"pallet-lockable-currency/try-runtime",
 	"pallet-kitties/try-runtime",
 	"pallet-kitties-v2/try-runtime",
+	"pallet-kitties-myself/try-runtime",
+	"pallet-tight-coupling/try-runtime",
+	"pallet-loose-coupling/try-runtime",
 	"pallet-timestamp/try-runtime",
 	"pallet-transaction-payment/try-runtime",
 ]

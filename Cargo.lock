@@ -3693,14 +3693,17 @@ dependencies = [
  "pallet-balances",
  "pallet-grandpa",
  "pallet-kitties",
+ "pallet-kitties-myself",
  "pallet-kitties-v2",
  "pallet-lockable-currency",
+ "pallet-loose-coupling",
  "pallet-mint-token",
  "pallet-nicks",
  "pallet-randomness-collective-flip",
  "pallet-something",
  "pallet-sudo",
  "pallet-template",
+ "pallet-tight-coupling",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
@@ -3948,6 +3951,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-kitties-myself"
+version = "0.1.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-kitties-v2"
 version = "0.1.0"
 dependencies = [
@@ -3969,6 +3987,21 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-loose-coupling"
+version = "0.1.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-template",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
@@ -4074,6 +4107,21 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-tight-coupling"
+version = "0.1.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-template",
  "parity-scale-codec",
  "scale-info",
  "sp-core",

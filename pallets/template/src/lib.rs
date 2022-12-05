@@ -139,3 +139,14 @@ pub mod pallet {
 		}
 	}
 }
+
+pub trait DoSome{
+	fn increase_value(value: u32) -> u32;
+}
+
+impl<T: Config> DoSome for Pallet<T>{
+	fn increase_value(value: u32) -> u32 {
+		let something = <Something<T>>::get().unwrap();
+		something * value
+	}
+}

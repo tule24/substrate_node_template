@@ -24,7 +24,7 @@ pub mod pallet {
 	#[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 	#[scale_info(skip_type_params(T))]
 	pub struct Kitty<T: Config> {
-		pub dna: [u8; 16],               // using 16 bytes to represent a kitty DNA
+		pub dna: [u8; 16],               // using 16 bytes to represent a kitty DNA == Hash
 		pub price: Option<BalanceOf<T>>, // None assume not for sale
 		pub gender: Gender,
 		pub owner: T::AccountId,
