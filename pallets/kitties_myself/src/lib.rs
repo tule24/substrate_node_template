@@ -12,7 +12,6 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use scale_info::TypeInfo;
     use sp_runtime::ArithmeticError;
-    use sp_std::vec::Vec;
 
     // Khai báo 1 struct pallet placeholder để có thể sử dụng trong runtime
     #[pallet::pallet]
@@ -43,7 +42,7 @@ pub mod pallet {
     #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
     #[scale_info(skip_type_params(T))]
     pub struct Kitty<T: Config> {
-        dna: Vec<u8>,
+        dna: T::Hash,
         owner: T::AccountId,
         price: u32,
         gender: Gender,
@@ -58,21 +57,21 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn kitties)]
     // Mapping kitty_dna => Kitty
-    pub type Kitties<T: Config> = StorageMap<_, Blake2_128Concat, Vec<u8>, Kitty<T>>;
+    pub type Kitties<T: Config> = StorageMap<_, Blake2_128Concat, T::Hash, Kitty<T>>;
 
     #[pallet::storage]
     #[pallet::getter(fn kitties_owned)]
     // Mapping kitty_owner => Vec<kitty_dna>
-    pub type KittiesOwned<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, BoundedVec<Vec<u8>, T::MaxKittiesOwned>, ValueQuery,>;
+    pub type KittiesOwned<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, BoundedVec<T::Hash, T::MaxKittiesOwned>, ValueQuery,>;
 
     // Định nghĩa các event để emit khi các action thành công
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         // Emit when kitty minted
-        Minted {owner: T::AccountId, kitty_dna: Vec<u8>},
+        Minted {owner: T::AccountId, kitty_dna: T::Hash},
         // Emit when transfer kitty
-        Transferred {from: T::AccountId, to: T::AccountId, kitty_dna: Vec<u8>}
+        Transferred {from: T::AccountId, to: T::AccountId, kitty_dna: T::Hash}
     }
 
     // Định nghĩa các error để emit khi lỗi xảy ra
@@ -136,7 +135,7 @@ pub mod pallet {
         }
 
         #[pallet::weight(100)]
-        pub fn transfer(origin: OriginFor<T>, to: T::AccountId, kitty_dna: Vec<u8>) -> DispatchResult {
+        pub fn transfer(origin: OriginFor<T>, to: T::AccountId, kitty_dna: T::Hash) -> DispatchResult {
             // Make sure the caller is from a signed origin
             let sender = ensure_signed(origin)?;
 
@@ -174,13 +173,14 @@ pub mod pallet {
 
     // Helper func là các hàm hỗ trợ xử lý các logic cũng như tránh lặp code, giúp bảo mật code
     impl<T: Config> Pallet<T>{
-        fn gen_dna_gender() -> (Vec<u8>, Gender) {
+        fn gen_dna_gender() -> (T::Hash, Gender) {
             // Get random kitty_dna make sure it not exists
-            let mut random = T::KittyDnaRandom::random(&b"dna"[..]).0.encode();
+            let mut random = T::KittyDnaRandom::random(&b"dna"[..]).0;
             while Self::kitties(&random) != None {
-                random = T::KittyDnaRandom::random(&b"dna"[..]).0.encode();
+                random = T::KittyDnaRandom::random(&b"dna"[..]).0;
             };
-            let gender = if random[0] % 2 == 0 {Gender::Male} else {Gender::Female};
+            let gender = if random.encode()[0] % 2 == 0 {Gender::Male} else {Gender::Female};
+            
             return (random, gender)
         }
     }
