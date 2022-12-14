@@ -1,12 +1,18 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
+
 pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
     use frame_support::{
         pallet_prelude::*,
-        traits::{Time, Randomness},
+        traits::{Time, Randomness, Currency},
         BoundedVec
     };
     use frame_system::pallet_prelude::*;
@@ -25,13 +31,14 @@ pub mod pallet {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         type Time: Time;
         type KittyDnaRandom: Randomness<Self::Hash, Self::BlockNumber>;
-
+        type Currency: Currency<Self::AccountId>;
         #[pallet::constant]
         type MaxKittiesOwned: Get<u32>;
     }
 
     // define moment type
     type MomentOf<T> = <<T as Config>::Time as Time>::Moment;
+    type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
     #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
     pub enum Gender {
@@ -42,11 +49,11 @@ pub mod pallet {
     #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
     #[scale_info(skip_type_params(T))]
     pub struct Kitty<T: Config> {
-        dna: T::Hash,
-        owner: T::AccountId,
-        price: u32,
-        gender: Gender,
-        created_date: MomentOf<T>
+        pub dna: T::Hash,
+        pub owner: T::AccountId,
+        pub price: BalanceOf<T>,
+        pub gender: Gender,
+        pub created_date: MomentOf<T>
     }
 
     #[pallet::storage]
@@ -97,7 +104,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T>{
         #[pallet::weight(100)]
-        pub fn mint_kitty(origin: OriginFor<T>, price: u32) -> DispatchResult {
+        pub fn mint_kitty(origin: OriginFor<T>, price: BalanceOf<T>) -> DispatchResult {
             // Make sure the caller is from a signed origin
             let sender = ensure_signed(origin)?;
 

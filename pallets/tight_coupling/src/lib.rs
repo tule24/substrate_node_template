@@ -29,12 +29,12 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(100)]
 		pub fn update_something(origin: OriginFor<T>, num: u32) -> DispatchResult {
-			let something = pallet_template::Pallet::<T>::something()?;
-			Self::deposit_event(Event::SomethingValue(something));
+			let something = pallet_template::Pallet::<T>::something();
+			// Self::deposit_event(Event::SomethingValue(something));
 
 			pallet_template::Pallet::<T>::do_something(origin, num)?;
-			let something_new = pallet_template::Pallet::<T>::something()?;
-			Self::deposit_event(Event::UpdateSomething(something_new));
+			let something_new = pallet_template::Pallet::<T>::something();
+			// Self::deposit_event(Event::UpdateSomething(something_new));
 			Ok(())
 		}
 	}

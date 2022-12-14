@@ -53,8 +53,8 @@ pub use pallet_loose_coupling;
 pub use pallet_lockable_currency;
 pub use pallet_mint_token;
 pub use pallet_something;
-/// Import the template pallet.
 pub use pallet_template;
+
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -347,6 +347,7 @@ impl pallet_kitties_myself::Config for Runtime {
 	type Time = Timestamp;
 	type MaxKittiesOwned = MaxKittyOwned;
 	type KittyDnaRandom = RandomnessCollectiveFlip;
+	type Currency = Balances;
 }
 
 impl pallet_tight_coupling::Config for Runtime {

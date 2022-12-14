@@ -16,8 +16,11 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::pallet_prelude::*;
+	use frame_support::pallet_prelude::{*, OptionQuery};
 	use frame_system::pallet_prelude::*;
+	use frame_support::sp_runtime::traits::Printable;
+	use frame_support::sp_runtime::print;
+	use frame_support::sp_std::if_std;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -36,7 +39,7 @@ pub mod pallet {
 	#[pallet::getter(fn something)]
 	// Learn more about declaring storage items:
 	// https://docs.substrate.io/main-docs/build/runtime-storage/#declaring-storage-items
-	pub type Something<T> = StorageValue<_, u32, ResultQuery<Error::<T>::StorageOverflow>>;
+	pub type Something<T> = StorageValue<_, u32>;
 
 	#[pallet::storage]
 	pub type Number<T:Config> = StorageMap<_, Blake2_128Concat, T::AccountId, u32, ValueQuery, >;
@@ -83,8 +86,8 @@ pub mod pallet {
 			// Update storage.
 			<Something<T>>::put(something);
 			// Something::<T>::put(something);
-			// Something::<T>::get() == <Something<T>>::get() == Self::something();
-
+			// Something::<T>::get() == <Something<T>>::get() == Self::something();\
+			"My something is stored".print();
 			// Emit an event.
 			Self::deposit_event(Event::SomethingStored(something, who));
 			// Return a successful DispatchResultWithPostInfo
@@ -95,6 +98,11 @@ pub mod pallet {
 		pub fn put_number(origin: OriginFor<T>, number: u32) -> DispatchResult{
 			let who = ensure_signed(origin)?;
 			<Number<T>>::insert(who.clone(), number);
+			if_std! {
+				println!("Hello number");
+				println!("Number put is: {:#?}", number);
+				println!("The caller is: {:#?}", who);
+			}
 			Self::deposit_event(Event::SomethingStored(number, who));
 			Ok(())
 		}
@@ -121,21 +129,21 @@ pub mod pallet {
 			let _who = ensure_signed(origin)?;
 
 			// Read a value from storage.
-			// match <Something<T>>::get() {
-			// 	// Return an error if the value has not been set.
-			// 	None => return Err(Error::<T>::NoneValue.into()),
-			// 	Some(old) => {
-			// 		// Increment the value read from storage; will error in the event of overflow.
-			// 		let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
-			// 		// Update the value in storage with the incremented result.
-			// 		<Something<T>>::put(new);
-			// 		Ok(())
-			// 	},
-			// }
-			let x = <Something<T>>::get()?;
-			// let x = x.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
-			<Something<T>>::put(x);
-			Ok(())
+			match <Something<T>>::get() {
+				// Return an error if the value has not been set.
+				None => return Err(Error::<T>::NoneValue.into()),
+				Some(old) => {
+					// Increment the value read from storage; will error in the event of overflow.
+					let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
+					// Update the value in storage with the incremented result.
+					<Something<T>>::put(new);
+					Ok(())
+				},
+			}
+			// let x = <Something<T>>::get()?;
+			// // let x = x.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
+			// <Something<T>>::put(x);
+			// Ok(())
 		}
 	}
 }
