@@ -16,10 +16,9 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::pallet_prelude::{*, OptionQuery};
+	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use frame_support::sp_runtime::traits::Printable;
-	use frame_support::sp_runtime::print;
 	use frame_support::sp_std::if_std;
 
 	#[pallet::pallet]
@@ -63,6 +62,27 @@ pub mod pallet {
 		NoneValue,
 		/// Errors should have helpful documentation associated with them.
 		StorageOverflow,
+	}
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig{
+		pub genesis_value: u32,
+	}
+
+	#[cfg(feature = "std")]
+	impl Default for GenesisConfig {
+		fn default() -> Self{
+			Self{
+				genesis_value: 0u32
+			}
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+		fn build(&self) {
+			<Something<T>>::put(self.genesis_value)
+		}
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.

@@ -13,6 +13,7 @@ pub mod pallet {
     use frame_support::{
         pallet_prelude::*,
         traits::{Time, Randomness, Currency},
+        sp_runtime::traits::{Hash, Zero},
         BoundedVec
     };
     use frame_system::pallet_prelude::*;
@@ -96,6 +97,32 @@ pub mod pallet {
         TooManyOwned
     }
 
+    #[pallet::genesis_config]
+    pub struct GenesisConfig<T: Config>{
+        pub kitties_myself: Vec<T::AccountId>
+    }
+
+    #[cfg(feature = "std")]
+    impl<T: Config> Default for GenesisConfig<T> {
+        fn default() -> Self {
+            Self {
+                kitties_myself: vec![]
+            }
+        }
+    }
+
+    #[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+		fn build(&self){
+			for (index, account) in self.kitties_myself.iter().enumerate(){
+                let price: BalanceOf<T> = Zero::zero();
+                let moment: MomentOf<T> = Zero::zero();
+                let dna = T::Hashing::hash(&[index as u8]);
+                let gender = if index%2 == 0 {Gender::Male} else {Gender::Female};
+				assert!(<Pallet<T>>::create_kitty(account, price, dna, gender, moment).is_ok());
+			}
+		}
+	}
     // Định nghĩa các logic cần thực thi trong context nhất định, ex: on_initialize, on_finalize
     #[pallet::hooks]
     impl<T: Config> Hooks<T::BlockNumber> for Pallet<T> {}
@@ -111,34 +138,8 @@ pub mod pallet {
             // Determine gender depend on dna.len()
             let (dna, gender) = Self::gen_dna_gender();
             let created_date = T::Time::now();
-            
-            // Create kitty
-            let kitty = Kitty::<T> {
-                dna: dna.clone(),
-                owner: sender.clone(),
-                price,
-                gender,
-                created_date
-            };
 
-            // Check kitty total overflow, if not +1
-            let kitty_total = Self::kitties_total();
-            let new_kitty_total = kitty_total.checked_add(1).ok_or(ArithmeticError::Overflow)?;
-
-            // Update kittiesowned for owner
-            <KittiesOwned<T>>::try_mutate(&sender, |list_kitty| {
-                list_kitty.try_push(dna.clone())
-            }).map_err(|_| <Error<T>>::TooManyOwned)?;
-
-            // update kitty total
-            <KittiesTotal<T>>::put(new_kitty_total);
-            //update kitties
-            <Kitties<T>>::insert(dna.clone(), kitty);
-
-            // emit event
-            Self::deposit_event(Event::Minted{owner: sender, kitty_dna: dna});
-
-            Ok(())
+            Self::create_kitty(&sender, price, dna, gender, created_date)
         }
 
         #[pallet::weight(100)]
@@ -189,6 +190,36 @@ pub mod pallet {
             let gender = if random.encode()[0] % 2 == 0 {Gender::Male} else {Gender::Female};
             
             return (random, gender)
+        }
+
+        fn create_kitty(account: &T::AccountId, price: BalanceOf<T>, dna: T::Hash, gender: Gender, created_date: MomentOf<T>) -> DispatchResult {
+            // Create kitty
+            let kitty = Kitty::<T> {
+                dna: dna.clone(),
+                owner: account.clone(),
+                price,
+                gender,
+                created_date
+            };
+
+            // Check kitty total overflow, if not +1
+            let kitty_total = Self::kitties_total();
+            let new_kitty_total = kitty_total.checked_add(1).ok_or(ArithmeticError::Overflow)?;
+
+            // Update kittiesowned for owner
+            <KittiesOwned<T>>::try_mutate(&account, |list_kitty| {
+                list_kitty.try_push(dna.clone())
+            }).map_err(|_| <Error<T>>::TooManyOwned)?;
+
+            // update kitty total
+            <KittiesTotal<T>>::put(new_kitty_total);
+            //update kitties
+            <Kitties<T>>::insert(dna.clone(), kitty);
+
+            // emit event
+            Self::deposit_event(Event::Minted{owner: account.clone(), kitty_dna: dna});
+
+            Ok(())
         }
     }
 }

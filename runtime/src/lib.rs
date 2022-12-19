@@ -33,7 +33,7 @@ pub use frame_support::{
 	},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
-		IdentityFee, Weight,
+		IdentityFee, Weight, WeightToFeePolynomial, WeightToFeeCoefficients, WeightToFeeCoefficient
 	},
 	StorageValue,
 };
@@ -44,6 +44,7 @@ use pallet_transaction_payment::{ConstFeeMultiplier, CurrencyAdapter, Multiplier
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
+// use smallvec::smallvec;
 
 pub use pallet_kitties;
 pub use pallet_kitties_v2;
@@ -151,7 +152,8 @@ parameter_types! {
 	/// We allow for 2 seconds of compute with a 6 second average block time.
 	pub BlockWeights: frame_system::limits::BlockWeights =
 		frame_system::limits::BlockWeights::with_sensible_defaults(
-			(2u64 * WEIGHT_PER_SECOND).set_proof_size(u64::MAX),
+			// (2u64 * WEIGHT_PER_SECOND).set_proof_size(u64::MAX),
+			(Weight::from_ref_time(30_000_000_000)).set_proof_size(u64::MAX),
 			NORMAL_DISPATCH_RATIO,
 		);
 	pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
@@ -290,6 +292,27 @@ impl pallet_nicks::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 }
 
+// pub const UNITS: Balance = 10_000_000_000;
+// pub const DOLLARS: Balance = UNITS; // 10_000_000_000
+// pub const CENTS: Balance = DOLLARS / 100; // 100_000_000
+// pub const MILLICENTS: Balance = CENTS / 1_000; // 100_000
+
+// pub struct PolyWeightToFee;
+// impl WeightToFeePolynomial for PolyWeightToFee {
+// 	type Balance = Balance;
+// 	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
+// 		// in Polkadot, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 CENT:
+// 		let p = CENTS;
+// 		let q: u128 = 10 * ExtrinsicBaseWeight::get().ref_time() as u128;
+// 		smallvec![WeightToFeeCoefficient {
+// 			degree: 1,
+// 			negative: false,
+// 			coeff_frac: Perbill::from_rational(p % q, q),
+// 			coeff_integer: p / q,
+// 		}]
+// 	}
+// }
+
 parameter_types! {
 	pub FeeMultiplier: Multiplier = Multiplier::one();
 }
@@ -299,6 +322,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
 	type OperationalFeeMultiplier = ConstU8<5>;
 	type WeightToFee = IdentityFee<Balance>;
+	// type WeightToFee = PolyWeightToFee;
 	type LengthToFee = IdentityFee<Balance>;
 	type FeeMultiplierUpdate = ConstFeeMultiplier<FeeMultiplier>;
 }
@@ -308,6 +332,12 @@ impl pallet_sudo::Config for Runtime {
 	type RuntimeCall = RuntimeCall;
 }
 
+impl pallet_utility::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type PalletsOrigin = OriginCaller;
+	type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
+}
 /// Configure the pallet-template in pallets/template.
 impl pallet_template::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -374,6 +404,7 @@ construct_runtime!( // tạo ra một runtime từ danh sách các pallet mà m�
 		Balances: pallet_balances,
 		TransactionPayment: pallet_transaction_payment,
 		Sudo: pallet_sudo,
+		Utility: pallet_utility,
 		// Include the custom logic from the pallet-template in the runtime.
 		TemplateModule: pallet_template,
 		Something: pallet_something,
